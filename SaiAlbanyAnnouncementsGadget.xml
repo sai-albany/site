@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+<ModulePrefs title="Announcements Spreadsheet"
+             description="Announcements Spreadsheet"
+             author="Gopal"
+             author_affiliation="Sathya Sai Baba Center of Albany"
+             author_email="sai.albany@gmail.com"
+             screenshot="/ig/modules/spreadsheet.png"
+             thumbnail="/ig/modules/spreadsheet-thm.png" > 
+<Require feature="idi"/>
+<Require feature="locked-domain" />
+</ModulePrefs>
+<UserPref name="_table_query_url" display_name="Data source url" 
+          required="true"/>
+<UserPref name="_table_query_refresh_interval" 
+          display_name="Data refresh interval (minutes)" 
+          default_value="0" datatype="enum" required="false">
+<EnumValue value="0" display_value="Do not refresh"/>
+<EnumValue value="60" display_value="1"/>
+<EnumValue value="300" display_value="5"/>
+<EnumValue value="1800" display_value="30"/>
+</UserPref>
+<Content type="html"><![CDATA[
+
+<script src="https://www.google.com/jsapi" type="text/javascript"></script>
+
+<div id="tablediv" style="overflow: auto;">
+<img src="https://saialbanywebsite.googlecode.com/svn/trunk/spinner.gif" />
+</div>
+
+<script>
+
+/**
+ * Load the APIs and run sendQuery when the load is complete
+ */
+var gadgetHelper = null;
+_IG_RegisterOnloadHandler(loadVisualizationAPI);
+function loadVisualizationAPI() { 
+  google.load("visualization", "1");
+  google.setOnLoadCallback(sendQuery);
+}
+
+/**
+ * Create a query (shaped by the Gadget's user preferences), then 
+ * send it to the spreadsheet data source. Also give the name of a 
+ * function ("handleQueryResponse") to run once the spreadsheet data 
+ * is retrieved:
+ */
+function sendQuery() {
+  var prefs = new _IG_Prefs(); // User preferences 
+  gadgetHelper = new google.visualization.GadgetHelper(); 
+  var query = gadgetHelper.createQueryFromPrefs(prefs);
+  query.send(handleQueryResponse);
+} 
+
+/**
+ * The core logic. Process the spreadsheet data however you want. 
+ * In this case, we create HTML to be presented back to the user. 
+ */
+function handleQueryResponse(response) {
+
+  /**
+   * Use the visualization GadgetHelper class to handle errors 
+   */
+  if (!gadgetHelper.validateResponse(response)) {
+    return;     // Default error handling was done, just leave. 
+  }
+
+  /**
+   * Get the data from spreadsheet - this is a key step
+   */
+  var data = response.getDataTable();
+
+  var html = [];   // start the HTML output string
+
+  /**
+   * Process all Rows in the specified range
+   */
+  for (var row = 1; row < data.getNumberOfRows(); row++) {
+
+    /**
+     * Process the Columns in each Row
+     */
+    var title =''
+    var dated =''
+    var venue =''
+    var activity=''
+    for (var col = 0; col < data.getNumberOfColumns(); col++) {
+
+      /**
+       * Get a data value from the range 
+       * this is the next key step 
+       */
+      var formattedValue = data.getFormattedValue(row, col);
+      formattedValue = escapeHtml(formattedValue);
+      if (col==0)
+      title = formattedValue
+      if (col==1)
+      dated = formattedValue
+      if (col==2)
+      venue = formattedValue
+      if (col==3)
+      activity = formattedValue
+    }
+
+
+    html.push(
+    '<div style="background:none;border:none;margin:0;padding:0;background:#d8d8b1;padding:3px;text-align:left;font-size:10pt;font-weight:bold;border-bottom:1px solid #ccc">');
+    html.push('<a style="text-decoration: none" id="expcol'+ row+ '" href="#" onclick="showHide(' + row + ')">+</a>  ');
+    html.push(title + ' ' + dated);
+    html.push('</div>');
+    html.push('<div id="id'+ row+ '" style="font-size:10pt;background:#f5f5f5;padding:5px;max-height:250px;overflow:auto;display:none">');
+    html.push('<b>Venue:</b>' + venue);
+    html.push('<br>');
+    html.push(activity);
+    html.push('</div>');
+    
+    html.push('<br>');
+  } 
+
+  /**
+   * Set the generated html into the container div.
+   */
+  var tableDiv = _gel('tablediv');
+  tableDiv.innerHTML = html.join('');
+  tableDiv.style.width = document.body.clientWidth + 'px';
+  tableDiv.style.height = document.body.clientHeight + 'px';
+}
+
+/**
+ * Define any supporting code you need 
+ * (like this handy function to escape special characters for html output):
+ */
+function escapeHtml(text) {
+  if (text == null) {
+    return '';
+  }
+  return _hesc(text);
+} 
+
+function showHide(rowvalue) {
+  announcement =document.getElementById('id'+rowvalue)
+  expandcollapseicon=document.getElementById('expcol'+rowvalue)
+
+  if(announcement.style.display=='none') {
+    announcement.style.display=''
+    expandcollapseicon.innerHTML='-'
+  } else {
+    announcement.style.display='none'
+    expandcollapseicon.innerHTML='+'
+  }
+}
+
+</script> 
+]]>
+</Content>
+</Module>
